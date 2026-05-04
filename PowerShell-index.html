@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PowerShell Automation Scripts — Windows Server 2022</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #f8f4f0;
+      --bg2:       #f0ebe4;
+      --panel:     #ffffff;
+      --border:    #e0d5c8;
+      --accent:    #7F3030;
+      --accent2:   #a84040;
+      --accent3:   #2d6a4f;
+      --warn:      #b45309;
+      --text:      #1a1008;
+      --muted:     #7a6555;
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Figtree', sans-serif;
+      --shadow:    0 2px 16px rgba(127,48,48,0.08);
+      --shadow-lg: 0 8px 40px rgba(127,48,48,0.13);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--text); font-family:var(--sans); overflow-x:hidden; }
+
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:radial-gradient(circle, rgba(127,48,48,0.05) 1px, transparent 1px);
+      background-size:30px 30px; pointer-events:none; z-index:0;
+    }
+
+    /* HERO */
+    .hero { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:0 8vw; overflow:hidden; }
+    .blob { position:absolute; border-radius:50%; filter:blur(90px); opacity:0.13; pointer-events:none; }
+    .blob-1 { width:500px; height:500px; background:var(--accent); top:-100px; right:-100px; }
+    .blob-2 { width:300px; height:300px; background:var(--warn); bottom:60px; left:-60px; }
+
+    .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:1.4rem; display:flex; align-items:center; gap:10px; animation:fadeUp 0.5s ease both; }
+    .eyebrow::before { content:''; width:28px; height:2px; background:var(--accent); border-radius:2px; }
+
+    h1 { font-family:'Syne',var(--sans); font-size:clamp(2.4rem,5.5vw,5rem); font-weight:800; line-height:1.05; letter-spacing:-2px; color:var(--text); margin-bottom:1.4rem; animation:fadeUp 0.5s ease 0.1s both; }
+    h1 em { font-style:normal; color:var(--accent); }
+
+    .hero-desc { font-size:1.05rem; color:var(--muted); max-width:560px; line-height:1.75; margin-bottom:2rem; animation:fadeUp 0.5s ease 0.2s both; }
+
+    .badge-row { display:flex; flex-wrap:wrap; gap:8px; animation:fadeUp 0.5s ease 0.3s both; }
+    .badge { font-family:var(--mono); font-size:11px; padding:4px 12px; border-radius:4px; border:1.5px solid; font-weight:500; }
+    .badge-red   { color:var(--accent);  border-color:var(--accent);  background:rgba(127,48,48,0.07); }
+    .badge-green { color:var(--accent3); border-color:var(--accent3); background:rgba(45,106,79,0.07); }
+    .badge-amber { color:var(--warn);    border-color:var(--warn);    background:rgba(180,83,9,0.07); }
+
+    /* LAYOUT */
+    .divider { border:none; border-top:1.5px solid var(--border); margin:0 8vw; }
+    section { position:relative; z-index:1; padding:5.5rem 8vw; }
+    .stripe { background:var(--bg2); position:relative; z-index:1; padding:1px 0; }
+
+    .sec-eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:0.8rem; display:flex; align-items:center; gap:8px; }
+    .sec-eyebrow::before { content:''; width:16px; height:2px; background:var(--accent); border-radius:2px; }
+
+    h2 { font-family:'Syne',var(--sans); font-size:clamp(1.7rem,3vw,2.4rem); font-weight:700; letter-spacing:-1px; color:var(--text); margin-bottom:2.8rem; }
+
+    /* TABLE */
+    .table-wrap { border:1.5px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:var(--shadow); }
+    .env-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:13px; }
+    .env-table tr { border-bottom:1px solid var(--border); }
+    .env-table tr:last-child { border-bottom:none; }
+    .env-table tr:hover td { background:var(--bg2); }
+    .env-table td { padding:13px 20px; background:var(--panel); transition:background 0.15s; }
+    .env-table td:first-child { color:var(--muted); width:220px; border-right:1px solid var(--border); }
+    .env-table td:last-child { color:var(--accent); font-weight:500; }
+
+    /* CHECKLIST */
+    .checklist { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1px; background:var(--border); border:1.5px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:var(--shadow); }
+    .check-item { background:var(--panel); padding:1.1rem 1.4rem; display:flex; align-items:center; gap:12px; transition:background 0.15s; }
+    .check-item:hover { background:var(--bg2); }
+    .check-icon { width:22px; height:22px; border-radius:50%; background:rgba(45,106,79,0.1); border:1.5px solid var(--accent3); color:var(--accent3); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; font-weight:700; }
+    .check-text { font-size:14px; color:var(--text); }
+
+    /* SCRIPT CARDS */
+    .scripts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1.2rem; margin-bottom:3rem; }
+    .script-card { background:var(--panel); border:1.5px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow); transition:all 0.25s; }
+    .script-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+    .script-header { padding:14px 18px; border-bottom:1px solid var(--border); background:rgba(127,48,48,0.04); display:flex; align-items:center; gap:12px; }
+    .script-num { width:32px; height:32px; border-radius:50%; background:var(--accent); color:#fff; font-family:var(--mono); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .script-title { font-weight:700; font-size:14px; color:var(--text); }
+    .script-body { padding:16px 18px; }
+    .script-desc { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:12px; }
+    .script-output { font-family:var(--mono); font-size:11px; color:var(--accent3); background:rgba(45,106,79,0.06); border:1px solid rgba(45,106,79,0.2); border-radius:6px; padding:8px 12px; }
+
+    /* CODE */
+    .code-block { background:#1a0f0f; border:1.5px solid #3a1a1a; border-radius:8px; overflow:hidden; margin:1rem 0; box-shadow:var(--shadow); }
+    .code-header { background:#2a1212; border-bottom:1px solid #3a1a1a; padding:8px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .code-lang { font-family:var(--mono); font-size:10px; color:#8a5a5a; letter-spacing:1.5px; text-transform:uppercase; }
+    .code-dots { display:flex; gap:6px; }
+    .code-dots span { width:10px; height:10px; border-radius:50%; }
+    .dot-r{background:#ef4444;}.dot-y{background:#f59e0b;}.dot-g{background:#10b981;}
+    pre { padding:1.2rem 1.5rem; font-family:var(--mono); font-size:12.5px; line-height:1.85; color:#c4a882; overflow-x:auto; }
+    pre .kw  { color:#e07070; }
+    pre .str { color:#7ecba1; }
+    pre .cm  { color:#5a3a3a; font-style:italic; }
+    pre .var { color:#e0a070; }
+    pre .val { color:#70a0e0; }
+    pre .ok  { color:#10b981; }
+    pre .err { color:#ef4444; }
+
+    /* RESULT */
+    .result-box { background:rgba(45,106,79,0.06); border:1.5px solid rgba(45,106,79,0.25); border-radius:8px; padding:1rem 1.4rem; font-family:var(--mono); font-size:12.5px; color:var(--accent3); line-height:1.9; margin:1rem 0; }
+    .result-label { font-size:10px; letter-spacing:2px; color:var(--accent3); margin-bottom:6px; opacity:0.7; }
+
+    /* EXE FLOW */
+    .exe-flow { display:flex; align-items:center; gap:0; flex-wrap:wrap; justify-content:center; background:var(--panel); border:1.5px solid var(--border); border-radius:10px; padding:2.5rem; box-shadow:var(--shadow); }
+    .exe-step { text-align:center; padding:1rem 1.5rem; min-width:130px; }
+    .exe-icon { font-size:2rem; margin-bottom:8px; }
+    .exe-title { font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px; }
+    .exe-sub { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .exe-arrow { font-size:1.5rem; color:var(--border); padding:0 0.5rem; }
+
+    /* OUTPUT FILES */
+    .files-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+    .file-card { background:var(--panel); border:1.5px solid var(--border); border-radius:10px; padding:1.4rem; box-shadow:var(--shadow); transition:all 0.2s; display:flex; align-items:flex-start; gap:14px; }
+    .file-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+    .file-icon { font-size:1.8rem; flex-shrink:0; }
+    .file-name { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--accent); margin-bottom:4px; }
+    .file-desc { font-size:13px; color:var(--muted); line-height:1.5; }
+
+    /* SKILLS */
+    .skills-wrap { display:flex; flex-wrap:wrap; gap:10px; }
+    .skill-pill { background:var(--panel); border:1.5px solid var(--border); border-radius:6px; padding:8px 16px; font-size:13px; font-weight:500; color:var(--text); display:flex; align-items:center; gap:8px; box-shadow:var(--shadow); transition:all 0.15s; }
+    .skill-pill:hover { border-color:var(--accent); transform:translateY(-1px); }
+
+    /* FOOTER */
+    footer { position:relative; z-index:1; border-top:1.5px solid var(--border); padding:2.5rem 8vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; background:var(--panel); }
+    .footer-left { font-family:var(--mono); font-size:12px; color:var(--muted); }
+    .footer-left strong { color:var(--accent); }
+    .footer-links { display:flex; gap:1.5rem; flex-wrap:wrap; }
+    .footer-links a { font-family:var(--mono); font-size:12px; color:var(--muted); text-decoration:none; transition:color 0.2s; }
+    .footer-links a:hover { color:var(--accent); }
+
+    /* ANIM */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
+    @keyframes pulse { 0%,100%{opacity:0.3;}50%{opacity:1;} }
+    .live { display:inline-flex; align-items:center; gap:6px; }
+    .live::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--accent3); animation:pulse 2s ease infinite; }
+
+    @media(max-width:768px) { section { padding:4rem 5vw; } .exe-flow { flex-direction:column; } }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="eyebrow">Home Lab Project — Part 06</div>
+  <h1>PowerShell<br><em>Automation Scripts</em></h1>
+  <p class="hero-desc">
+    Building enterprise-grade PowerShell automation for Active Directory — bulk user creation
+    from CSV, user report generation, password expiry monitoring, security summaries, and
+    compiling everything into a standalone executable with PS2EXE.
+  </p>
+  <div class="badge-row">
+    <span class="badge badge-green"><span class="live">Complete</span></span>
+    <span class="badge badge-red">PowerShell</span>
+    <span class="badge badge-red">Active Directory</span>
+    <span class="badge badge-red">PS2EXE</span>
+    <span class="badge badge-amber">Automation</span>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ENVIRONMENT -->
+<section>
+  <div class="sec-eyebrow">Lab Setup</div>
+  <h2>Environment</h2>
+  <div class="table-wrap">
+    <table class="env-table">
+      <tr><td>Domain Controller</td><td>WIN-6ARV79FMB48 — Windows Server 2022</td></tr>
+      <tr><td>Domain</td><td>mylab.local</td></tr>
+      <tr><td>Server IP</td><td>192.168.1.200</td></tr>
+      <tr><td>OU Targeted</td><td>OU=VMUsers,DC=mylab,DC=local</td></tr>
+      <tr><td>PS2EXE Version</td><td>1.0.17</td></tr>
+      <tr><td>Users Created via CSV</td><td>8 bulk users</td></tr>
+      <tr><td>Total Users Managed</td><td>13 users</td></tr>
+    </table>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- OBJECTIVES -->
+<section>
+  <div class="sec-eyebrow">Goals</div>
+  <h2>Project Objectives</h2>
+  <div class="checklist">
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Create bulk user CSV file with department data</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Script 1 — Bulk AD User Creation from CSV (8 users)</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Script 2 — AD User Report Generator with CSV export</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Script 3 — Password Expiry Checker with color coding</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Script 4 — Master Report Generator (all-in-one)</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Install PS2EXE module from PowerShell Gallery</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Compile PowerShell script into standalone .exe</span></div>
+    <div class="check-item"><div class="check-icon">✓</div><span class="check-text">Verify EXE generates all reports with one double-click</span></div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- SCRIPTS OVERVIEW -->
+<div class="stripe">
+<section>
+  <div class="sec-eyebrow">Scripts</div>
+  <h2>Automation Scripts Built</h2>
+  <div class="scripts-grid">
+
+    <div class="script-card">
+      <div class="script-header"><div class="script-num">1</div><span class="script-title">Bulk AD User Creation</span></div>
+      <div class="script-body">
+        <div class="script-desc">Reads a CSV file and automatically creates all Active Directory user accounts with department, job title, and password — no manual entry needed.</div>
+        <div class="script-output">✅ Created: 8 users | Failed: 0</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="script-header"><div class="script-num">2</div><span class="script-title">AD User Report Generator</span></div>
+      <div class="script-body">
+        <div class="script-desc">Exports a full report of all AD users including department, job title, last logon date, password status, and account enabled status to CSV.</div>
+        <div class="script-output">✅ 13 users exported to ADUserReport.csv</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="script-header"><div class="script-num">3</div><span class="script-title">Password Expiry Checker</span></div>
+      <div class="script-body">
+        <div class="script-desc">Checks all user passwords and color-codes them as OK, EXPIRING SOON (within 14 days), or EXPIRED — allowing proactive user notification.</div>
+        <div class="script-output">✅ All 13 users: OK (39-41 days remaining)</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="script-header"><div class="script-num">4</div><span class="script-title">Master Report Generator</span></div>
+      <div class="script-body">
+        <div class="script-desc">Combines all reports into one script — generates AD User Report, Password Expiry Report, and Security Summary with one execution. Compiled into .exe.</div>
+        <div class="script-output">✅ 3 reports generated | Saved to Reports folder</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Script 1 Code -->
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang">Script 1 — Bulk AD User Creation from CSV</span><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div></div>
+    <pre><span class="cm"># Import users from CSV and create AD accounts</span>
+$users = <span class="var">Import-Csv</span> <span class="str">"C:\Users\Administrator\Desktop\NewUsers.csv"</span>
+$created = <span class="val">0</span>; $failed = <span class="val">0</span>
+
+<span class="kw">foreach</span> ($user <span class="kw">in</span> $users) {
+    <span class="kw">try</span> {
+        <span class="var">New-ADUser</span> `
+          -GivenName $user.FirstName -Surname $user.LastName `
+          -Name <span class="str">"$($user.FirstName) $($user.LastName)"</span> `
+          -SamAccountName $user.Username `
+          -UserPrincipalName <span class="str">"$($user.Username)@mylab.local"</span> `
+          -Department $user.Department -Title $user.JobTitle `
+          -AccountPassword (ConvertTo-SecureString $user.Password -AsPlainText -Force) `
+          -Enabled <span class="val">$true</span> -Path <span class="str">"OU=VMUsers,DC=mylab,DC=local"</span>
+
+        <span class="var">Write-Host</span> <span class="str">"✅ Created: $($user.FirstName) $($user.LastName)"</span> -ForegroundColor Green
+        $created++
+    } <span class="kw">catch</span> {
+        <span class="var">Write-Host</span> <span class="str">"❌ Failed: $($user.Username)"</span> -ForegroundColor Red
+        $failed++
+    }
+}
+<span class="var">Write-Host</span> <span class="str">"Total Created: $created | Total Failed: $failed"</span></pre>
+  </div>
+
+  <div class="result-box">
+    <div class="result-label">✓ Output</div>
+    ✅ Created: John Smith (jsmith)<br/>
+    ✅ Created: Sarah Johnson (sjohnson)<br/>
+    ✅ Created: Michael Brown (mbrown)<br/>
+    ✅ Created: Emily Davis (edavis)<br/>
+    ✅ Created: David Wilson (dwilson)<br/>
+    ✅ Created: Jessica Martinez (jmartinez)<br/>
+    ✅ Created: Robert Anderson (randerson)<br/>
+    ✅ Created: Lisa Taylor (ltaylor)<br/><br/>
+    Total Created: 8 | Total Failed: 0
+  </div>
+</section>
+</div>
+
+<hr class="divider"/>
+
+<!-- EXE COMPILATION -->
+<section>
+  <div class="sec-eyebrow">Compilation</div>
+  <h2>EXE Compilation with PS2EXE</h2>
+
+  <div class="exe-flow">
+    <div class="exe-step">
+      <div class="exe-icon">📝</div>
+      <div class="exe-title">PowerShell Script</div>
+      <div class="exe-sub">ITAdminReports.ps1</div>
+    </div>
+    <div class="exe-arrow">→</div>
+    <div class="exe-step">
+      <div class="exe-icon">⚙️</div>
+      <div class="exe-title">PS2EXE Compiler</div>
+      <div class="exe-sub">Invoke-PS2EXE</div>
+    </div>
+    <div class="exe-arrow">→</div>
+    <div class="exe-step">
+      <div class="exe-icon">💻</div>
+      <div class="exe-title">Executable</div>
+      <div class="exe-sub">ITAdminReports.exe</div>
+    </div>
+    <div class="exe-arrow">→</div>
+    <div class="exe-step">
+      <div class="exe-icon">🖱️</div>
+      <div class="exe-title">Double Click</div>
+      <div class="exe-sub">One click runs all</div>
+    </div>
+    <div class="exe-arrow">→</div>
+    <div class="exe-step">
+      <div class="exe-icon">📊</div>
+      <div class="exe-title">3 Reports</div>
+      <div class="exe-sub">Auto-generated</div>
+    </div>
+  </div>
+
+  <div class="code-block" style="margin-top:2rem;">
+    <div class="code-header"><span class="code-lang">PowerShell — Install & Compile</span><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div></div>
+    <pre><span class="cm"># Install PS2EXE</span>
+<span class="var">Install-Module</span> -Name PS2EXE -Scope CurrentUser -Force
+
+<span class="cm"># Compile script to EXE</span>
+<span class="var">Import-Module</span> PS2EXE
+<span class="var">Invoke-PS2EXE</span> `
+  -InputFile  <span class="str">"C:\Users\Administrator\Desktop\ITAdminReports.ps1"</span> `
+  -OutputFile <span class="str">"C:\Users\Administrator\Desktop\ITAdminReports.exe"</span> `
+  -RequireAdmin `
+  -Title       <span class="str">"IT Admin Report Generator"</span> `
+  -Description <span class="str">"Generates AD User, Password Expiry and Security Reports"</span> `
+  -Company     <span class="str">"mylab.local"</span> `
+  -Version     <span class="str">"1.0.1"</span></pre>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- OUTPUT FILES -->
+<div class="stripe">
+<section>
+  <div class="sec-eyebrow">Reports</div>
+  <h2>Output Files Generated</h2>
+  <div class="files-grid">
+    <div class="file-card">
+      <div class="file-icon">📊</div>
+      <div>
+        <div class="file-name">ADUserReport_[timestamp].csv</div>
+        <div class="file-desc">Full list of all AD users — name, username, department, job title, last logon, password status, account enabled status.</div>
+      </div>
+    </div>
+    <div class="file-card">
+      <div class="file-icon">🔐</div>
+      <div>
+        <div class="file-name">PasswordExpiryReport_[timestamp].csv</div>
+        <div class="file-desc">Password expiry status for all users — expiry date, days remaining, color-coded status (OK / EXPIRING SOON / EXPIRED).</div>
+      </div>
+    </div>
+    <div class="file-card">
+      <div class="file-icon">🛡️</div>
+      <div>
+        <div class="file-name">SecuritySummary_[timestamp].txt</div>
+        <div class="file-desc">Security overview — total users, locked accounts, disabled accounts, expired passwords, and accounts expiring soon.</div>
+      </div>
+    </div>
+    <div class="file-card">
+      <div class="file-icon">💻</div>
+      <div>
+        <div class="file-name">ITAdminReports.exe</div>
+        <div class="file-desc">Standalone executable — double-click to generate all 3 reports automatically. No PowerShell knowledge required to run.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<hr class="divider"/>
+
+<!-- SKILLS -->
+<section>
+  <div class="sec-eyebrow">Takeaways</div>
+  <h2>Skills Demonstrated</h2>
+  <div class="skills-wrap">
+    <div class="skill-pill"><span>⚡</span> PowerShell Scripting</div>
+    <div class="skill-pill"><span>📋</span> CSV Import/Export</div>
+    <div class="skill-pill"><span>👥</span> Bulk AD User Management</div>
+    <div class="skill-pill"><span>🔐</span> Password Policy Reporting</div>
+    <div class="skill-pill"><span>🛡️</span> Security Summary Generation</div>
+    <div class="skill-pill"><span>💻</span> PS2EXE Compilation</div>
+    <div class="skill-pill"><span>🔁</span> Loop & Error Handling</div>
+    <div class="skill-pill"><span>📁</span> Timestamped File Output</div>
+    <div class="skill-pill"><span>🤖</span> IT Task Automation</div>
+    <div class="skill-pill"><span>📝</span> IT Documentation</div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    Home Lab — Part 06 &nbsp;|&nbsp; <strong>PowerShell Automation Scripts</strong> &nbsp;|&nbsp; Built by Neil Marvin Simon
+  </div>
+  <div class="footer-links">
+    <a href="#">Part 01 — DNS & DHCP →</a>
+    <a href="#">Part 02 — Win10 Client →</a>
+    <a href="#">Part 03 — GPO →</a>
+    <a href="#">Part 04 — File Server →</a>
+    <a href="#">Part 05 — Audit Policy →</a>
+  </div>
+</footer>
+
+</body>
+</html>
